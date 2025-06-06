@@ -131,17 +131,25 @@ public class LoginPanel extends JPanel {
         gbc.insets = new Insets(20, 0, 10, 0);
         JButton loginButton = new JButton("Login");
         styleAccentButton(loginButton);
-        loginButton.addActionListener(e -> {
+        lloginButton.addActionListener(e -> {
             String username = usernameField.getText();
             String password = new String(passwordField.getPassword());
+
             if (username.isEmpty() || password.isEmpty()) {
                 errorLabel.setText("Please enter both username and password.");
             } else {
-                errorLabel.setText(" ");
-                // Perform login logic
-                mainApp.showView(MainApplication.HOME_VIEW);
+                boolean loggedIn = UserService.login(username, password);
+                if (loggedIn) {
+                    User user = UserService.getUserByUsername(username);
+                    Session.setCurrentUser(user);
+                    errorLabel.setText(" ");
+                    mainApp.showView(MainApplication.HOME_VIEW);
+                } else {
+                    errorLabel.setText("Invalid username or password.");
+                }
             }
         });
+
         formPanel.add(loginButton, gbc);
 
         // Centering wrapper
