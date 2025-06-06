@@ -122,46 +122,74 @@ public class HomePanel extends JPanel {
     private JPanel createHeroPanel() {
         JPanel heroPanel = new JPanel(new BorderLayout());
         heroPanel.setBackground(SECONDARY_COLOR);
-        heroPanel.setBorder(new EmptyBorder(40, 100, 40, 100));
-
-        // Left side - Welcome message
+        heroPanel.setBorder(new EmptyBorder(10, 100, 10, 100));
         JPanel textPanel = new JPanel(new GridBagLayout());
         textPanel.setBackground(SECONDARY_COLOR);
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.gridx = 0;
-        gbc.gridy = 0;
         gbc.anchor = GridBagConstraints.WEST;
-        gbc.insets = new Insets(0, 0, 20, 0);
+        gbc.insets = new Insets(0, 0, 10, 0);
 
+        JLabel noteLabel = new JLabel();
+        noteLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        gbc.gridy = 0; // First row
+        textPanel.add(noteLabel, gbc);
+
+        // Welcome Label
         JLabel welcomeLabel = new JLabel("Welcome to BusyBuy!");
         welcomeLabel.setFont(TITLE_FONT);
         welcomeLabel.setForeground(PRIMARY_COLOR);
+        gbc.gridy = 1; // Second row
+        gbc.insets = new Insets(0, 0, 20, 0); // More space below title
         textPanel.add(welcomeLabel, gbc);
 
-        gbc.gridy++;
-        JLabel subtitle = new JLabel("<html><div style='width:400px;'>Your premier destination for quality products. "
-                + "Shop with confidence with our secure payment system and fast delivery options."
-                + "\n Your Number 1 Choice!</div></html>");
+        // Subtitle
+        JLabel subtitle = new JLabel(
+                "<html><div style='width: 400px;'>Your premier destination for quality products. "
+                        + "Shop with confidence with our secure payment system and fast delivery options.</div>"
+                        + "<div style='color:#FF8C00; font-size:16px;'>Your Number 1 Choice!</div></html>");
         subtitle.setFont(SUBTITLE_FONT);
         subtitle.setForeground(new Color(100, 100, 100));
+        gbc.gridy = 2; // Third row
+        gbc.insets = new Insets(0, 0, 20, 0); // Space below subtitle
         textPanel.add(subtitle, gbc);
 
-        gbc.gridy++;
-        gbc.insets = new Insets(20, 0, 20, 0);
+        // Shop Now Button
         JButton shopNowButton = new JButton("Shop Now →");
-        styleAccentButton(shopNowButton);
+        styleAccentButton(shopNowButton); // Apply styling
+        gbc.gridy = 3; // Fourth row
+        gbc.insets = new Insets(10, 0, 0, 0); // Space above button
+
         textPanel.add(shopNowButton, gbc);
 
         // Right side - Hero image
+        JLabel imageLabel = null;
         try {
-            ImageIcon heroImage = new ImageIcon(new File("Images/bag").getAbsolutePath());
-
-            JLabel imageLabel = new JLabel(heroImage);
-            heroPanel.add(textPanel, BorderLayout.WEST);
-            heroPanel.add(imageLabel, BorderLayout.EAST);
+            // Use ClassLoader.getResource for robust image loading
+            java.net.URL imageUrl = getClass().getClassLoader().getResource("Images/bag.png");
+            if (imageUrl != null) {
+                ImageIcon heroImage = new ImageIcon(imageUrl);
+                // Scale the image if it's too large, or set a preferred size for the label
+                // For example, to scale to a max width of 500px while maintaining aspect ratio:
+                Image scaledImage = heroImage.getImage().getScaledInstance(500, -1, Image.SCALE_SMOOTH);
+                imageLabel = new JLabel(new ImageIcon(scaledImage));
+            } else {
+                System.err.println("Image not found: Images/bag.png");
+            }
         } catch (Exception e) {
+            System.err.println("Error loading image: " + e.getMessage());
+        }
+
+        // Add components to the heroPanel
+        heroPanel.add(textPanel, BorderLayout.WEST);
+
+        if (imageLabel != null) {
+            heroPanel.add(imageLabel, BorderLayout.EAST);
+        } else {
+            // If image is not found, you might want to center the text panel or
+            // add a placeholder. Here, I'm just centering it as a fallback.
             heroPanel.add(textPanel, BorderLayout.CENTER);
-            System.out.println(new File("/Images/").getAbsolutePath() + " not found");
+            System.out.println("Image not found, textPanel moved to CENTER.");
         }
 
         return heroPanel;
