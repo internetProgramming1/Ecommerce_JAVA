@@ -165,12 +165,10 @@ public class HomePanel extends JPanel {
         // Right side - Hero image
         JLabel imageLabel = null;
         try {
-            // Use ClassLoader.getResource for robust image loading
             java.net.URL imageUrl = getClass().getClassLoader().getResource("Images/bag.png");
             if (imageUrl != null) {
                 ImageIcon heroImage = new ImageIcon(imageUrl);
-                // Scale the image if it's too large, or set a preferred size for the label
-                // For example, to scale to a max width of 500px while maintaining aspect ratio:
+
                 Image scaledImage = heroImage.getImage().getScaledInstance(500, -1, Image.SCALE_SMOOTH);
                 imageLabel = new JLabel(new ImageIcon(scaledImage));
             } else {
