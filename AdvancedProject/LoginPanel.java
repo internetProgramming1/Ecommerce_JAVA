@@ -139,7 +139,7 @@ public class LoginPanel extends JPanel {
             } else {
                 errorLabel.setText(" ");
                 // Perform login logic
-                mainApp.showView(MainApplication.HOME_VIEW);
+                mainApp.showView(MainApplication.PRODUCTS_VIEW);
             }
         });
         formPanel.add(loginButton, gbc);
