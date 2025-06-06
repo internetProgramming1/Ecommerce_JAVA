@@ -106,12 +106,10 @@ public class ProductsPanel extends JPanel {
         navButtons.add(contactButton);
 
         // User actions
-        JButton loginButton = new JButton("Login");
-        styleAccentButton(loginButton);
-        loginButton.addActionListener(e -> {
-            mainApp.showView(MainApplication.LOGIN_VIEW);
-        });
-        navButtons.add(loginButton);
+        JButton logoutButton = new JButton("Logout");
+        styleAccentButton(logoutButton);
+        logoutButton.addActionListener(e -> mainApp.userLoggedOut());
+        navButtons.add(logoutButton);
 
         navPanel.add(navButtons, BorderLayout.EAST);
 

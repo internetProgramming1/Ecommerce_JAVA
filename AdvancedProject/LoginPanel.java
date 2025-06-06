@@ -138,9 +138,19 @@ public class LoginPanel extends JPanel {
                 errorLabel.setText("Please enter both username and password.");
             } else {
                 errorLabel.setText(" ");
+                usernameField.setText(" ");
+                passwordField.setText(" ");
                 // Perform login logic
                 mainApp.showView(MainApplication.PRODUCTS_VIEW);
+                int userId = DatabaseHelper.authenticateUser(username, password);
+
+                if (userId != -1) {
+                    mainApp.userLoggedIn(userId); // Critical login step
+                } else {
+                    JOptionPane.showMessageDialog(this, "Login failed");
+                }
             }
+
         });
         formPanel.add(loginButton, gbc);
 

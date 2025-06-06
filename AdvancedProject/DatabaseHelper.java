@@ -255,4 +255,22 @@ public class DatabaseHelper {
         }
         return 0.0;
     }
+
+    public static int authenticateUser(String username, String password) {
+        String sql = "SELECT id FROM users WHERE username = ? AND password = ?";
+        // try (Connection conn = getConnection();
+        // PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+        // pstmt.setString(1, username);
+        // // pstmt.setString(2, hashPassword(password)); // Always hash passwords!
+
+        // ResultSet rs = pstmt.executeQuery();
+        // if (rs.next()) {
+        // return rs.getInt("id"); // Return user ID
+        // }
+        // } catch (SQLException e) {
+        // e.printStackTrace();
+        // }
+        return -1; // Invalid credentials
+    }
 }
