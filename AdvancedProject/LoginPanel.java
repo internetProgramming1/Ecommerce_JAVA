@@ -131,7 +131,7 @@ public class LoginPanel extends JPanel {
         gbc.insets = new Insets(20, 0, 10, 0);
         JButton loginButton = new JButton("Login");
         styleAccentButton(loginButton);
-        lloginButton.addActionListener(e -> {
+        loginButton.addActionListener(e -> {
             String username = usernameField.getText();
             String password = new String(passwordField.getPassword());
 
