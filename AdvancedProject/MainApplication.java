@@ -19,6 +19,7 @@ public class MainApplication extends JFrame {
     public static final String CREATE_USER_VIEW = "CREATE_USER";
     public static final String PRODUCTS_VIEW = "PRODUCTS_VIEW";
     public static final String CART_VIEW = "CART_VIEW";
+    public static final String ADMIN_DASHBOARD = "ADMIN_DASHBOARD";
 
     private MainApplication() {
         super("BusyBuy - Premium E-Commerce Platform");
@@ -49,7 +50,7 @@ public class MainApplication extends JFrame {
         cardPanel.add(new CreateUserPanel(this), CREATE_USER_VIEW);
         cardPanel.add(productsPanel, PRODUCTS_VIEW);
         cardPanel.add(cartPage, CART_VIEW);
-
+        cardPanel.add(new AdminDashboard(this), ADMIN_DASHBOARD);
         setContentPane(cardPanel);
         setupFrame();
     }
