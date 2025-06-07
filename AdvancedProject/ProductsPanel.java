@@ -210,11 +210,11 @@ public class ProductsPanel extends JPanel {
         addToCartButton.setEnabled(product.getStockQuantity() > 0);
 
         addToCartButton.addActionListener(e -> {
-            if (currentUserId == -1) {
-                JOptionPane.showMessageDialog(this, "Please login to add items to cart");
-                mainApp.showView(MainApplication.LOGIN_VIEW);
-                return;
-            }
+            // if (currentUserId == -1) {
+            // JOptionPane.showMessageDialog(this, "Please login to add items to cart");
+            // mainApp.showView(MainApplication.LOGIN_VIEW);
+            // return;
+            // }
 
             int quantity = (int) quantitySpinner.getValue();
             DatabaseHelper.addToCart(currentUserId, product.getId(), quantity);
