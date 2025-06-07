@@ -1,64 +1,61 @@
 package Ecommerce_JAVA.AdvancedProject;
 
 import java.sql.*;
-import javax.crypto.SecretKeyFactory;
-import javax.crypto.spec.PBEKeySpec;
-import java.security.SecureRandom;
-import java.util.Base64;
+import java.security.*;
+import java.math.*;
 
 public class UserService {
 
-    private static final String DB_URL = "jdbc:mysql://localhost:3306/your_database_name";
-    private static final String DB_USER = "your_db_user";
-    private static final String DB_PASS = "your_db_password";
-
-    // Register a new customer (already exists in your code)
-    public static boolean registerCustomer(String fullName, String email, String password) {
-        // ... your existing registration code ...
+    // Hash password using SHA-256
+    private static String hashPassword(String password) {
+        try {
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            byte[] digest = md.digest(password.getBytes("UTF-8"));
+            BigInteger num = new BigInteger(1, digest);
+            return String.format("%064x", num);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
-    // Hash password using PBKDF2 (your existing method)
-    private static String hashPassword(String password) throws Exception {
-        // ... your existing hashing code ...
+    // Register user
+    public static boolean register(String username, String email, String password) {
+        String sql = "INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)";
+        try (Connection conn = DBConnection.getConnection();
+                PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, username);
+            ps.setString(2, email);
+            ps.setString(3, hashPassword(password));
+            ps.executeUpdate();
+            return true;
+        } catch (SQLException e) {
+            System.err.println("Register error: " + e.getMessage());
+            return false;
+        }
     }
 
-    // Generate random salt (your existing method)
-    private static byte[] getSalt() throws Exception {
-        // ... your existing salt code ...
-    }
+    // Authenticate user
+    public static User login(String username, String password) {
+        String sql = "SELECT id, username, email, password_hash FROM users WHERE username = ?";
+        try (Connection conn = DBConnection.getConnection();
+                PreparedStatement ps = conn.prepareStatement(sql)) {
 
-    // Verify password (your existing method)
-    public static boolean verifyPassword(String email, String password) {
-        // ... your existing password verification code ...
-    }
-
-    private static boolean verifyPasswordHash(String password, String stored) throws Exception {
-        // ... your existing hash verification code ...
-    }
-
-    // *** Add this login method for authentication ***
-    public static boolean login(String email, String password) {
-        // Return true if email exists and password matches
-        return verifyPassword(email, password);
-    }
-
-    // Optional: get user info by email (if needed after login)
-    public static Customer getCustomerByEmail(String email) {
-        String sql = "SELECT id, full_name, email, created_at FROM customers WHERE email = ?";
-        try (Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASS);
-                PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setString(1, email);
-            ResultSet rs = stmt.executeQuery();
+            ps.setString(1, username);
+            ResultSet rs = ps.executeQuery();
             if (rs.next()) {
-                return new Customer(
-                        rs.getInt("id"),
-                        rs.getString("full_name"),
-                        rs.getString("email"),
-                        rs.getTimestamp("created_at"));
+                String storedHash = rs.getString("password_hash");
+                if (storedHash.equals(hashPassword(password))) {
+                    return new User(
+                            rs.getInt("id"),
+                            rs.getString("username"),
+                            rs.getString("email"),
+                            storedHash);
+                }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            System.err.println("Login error: " + e.getMessage());
         }
-        return null;
+        return null; // authentication failed
     }
 }
