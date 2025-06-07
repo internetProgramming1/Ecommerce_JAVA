@@ -138,16 +138,20 @@ public class LoginPanel extends JPanel {
             if (username.isEmpty() || password.isEmpty()) {
                 errorLabel.setText("Please enter both username and password.");
             } else {
-                boolean loggedIn = UserService.login(username, password);
-                if (loggedIn) {
-                    User user = UserService.getUserByUsername(username);
-                    Session.setCurrentUser(user);
-                    errorLabel.setText(" ");
-                    mainApp.showView(MainApplication.HOME_VIEW);
+                errorLabel.setText(" ");
+                usernameField.setText(" ");
+                passwordField.setText(" ");
+                // Perform login logic
+                mainApp.showView(MainApplication.PRODUCTS_VIEW);
+                int userId = DatabaseHelper.authenticateUser(username, password);
+
+                if (userId != -1) {
+                    mainApp.userLoggedIn(userId); // Critical login step
                 } else {
-                    errorLabel.setText("Invalid username or password.");
+                    JOptionPane.showMessageDialog(this, "Login failed");
                 }
             }
+
         });
 
         formPanel.add(loginButton, gbc);
