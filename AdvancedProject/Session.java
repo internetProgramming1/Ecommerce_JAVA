@@ -1,3 +1,5 @@
+package Ecommerce_JAVA.AdvancedProject;
+
 public class Session {
     private static User currentUser;
 
@@ -7,13 +9,5 @@ public class Session {
 
     public static User getCurrentUser() {
         return currentUser;
-    }
-
-    public static void logout() {
-        currentUser = null;
-    }
-
-    public static boolean isLoggedIn() {
-        return currentUser != null;
     }
 }

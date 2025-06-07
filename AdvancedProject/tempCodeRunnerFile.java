@@ -5,14 +5,19 @@ import javax.swing.border.*;
 import java.awt.*;
 import java.awt.event.*;
 
+import Ecommerce_JAVA.AdvancedProject.Session;
+import Ecommerce_JAVA.AdvancedProject.User;
+import Ecommerce_JAVA.AdvancedProject.UserService;
+
 public class LoginPanel extends JPanel {
     private static final Color PRIMARY_COLOR = new Color(0, 102, 153);
     private static final Color SECONDARY_COLOR = new Color(250, 250, 250);
     private static final Color ACCENT_COLOR = new Color(255, 140, 0);
     private static final Font TITLE_FONT = new Font("Segoe UI", Font.BOLD, 35);
+    private static final Font SUBTITLE_FONT = new Font("Segoe UI", Font.PLAIN, 20);
     private static final Font BUTTON_FONT = new Font("Segoe UI", Font.PLAIN, 20);
-    private static final Font BUTTON2_FONT = new Font("Segoe UI", Font.PLAIN, 15);
 
+    private static final Font BUTTON2_FONT = new Font("Segoe UI", Font.PLAIN, 15);
     private MainApplication mainApp;
 
     public LoginPanel(MainApplication mainApp) {
@@ -40,10 +45,12 @@ public class LoginPanel extends JPanel {
         logoLabel.setFont(new Font("Segoe UI", Font.BOLD, 30));
         logoLabel.setForeground(PRIMARY_COLOR);
 
+        // Create a panel for right-aligned items
         JPanel rightNavPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         rightNavPanel.setBackground(Color.WHITE);
         rightNavPanel.add(logoLabel);
 
+        // Add admin button to the right nav panel
         JButton adminButton = new JButton("Admin Login");
         styleNavButton(adminButton);
         adminButton.addActionListener(e -> mainApp.showView(MainApplication.ADMIN_VIEW));
@@ -53,7 +60,8 @@ public class LoginPanel extends JPanel {
 
         add(navBar, BorderLayout.NORTH);
 
-        // Form Panel
+        // Main content (rest of the form remains the same, just remove the admin button
+        // part)
         JPanel formPanel = new JPanel(new GridBagLayout());
         formPanel.setBackground(SECONDARY_COLOR);
         formPanel.setBorder(new EmptyBorder(40, 80, 40, 80));
@@ -102,14 +110,8 @@ public class LoginPanel extends JPanel {
         gbc.gridx = 1;
         JCheckBox showPassword = new JCheckBox("Show Password");
         showPassword.setBackground(SECONDARY_COLOR);
-        showPassword.setFont(BUTTON_FONT);
-        showPassword.addActionListener(e -> {
-            if (showPassword.isSelected()) {
-                passwordField.setEchoChar((char) 0);
-            } else {
-                passwordField.setEchoChar('●');
-            }
-        });
+        showPassword.setFont(SUBTITLE_FONT);
+        showPassword.addActionListener(e -> passwordField.setEchoChar(showPassword.isSelected() ? (char) 0 : '●'));
         formPanel.add(showPassword, gbc);
 
         // Error label
@@ -117,14 +119,14 @@ public class LoginPanel extends JPanel {
         gbc.gridx = 0;
         gbc.gridwidth = 2;
         JLabel errorLabel = new JLabel(" ");
-        errorLabel.setFont(BUTTON_FONT);
+        errorLabel.setFont(SUBTITLE_FONT);
         errorLabel.setForeground(Color.RED);
         formPanel.add(errorLabel, gbc);
 
-        // Register button
+        // User register button
         gbc.gridy++;
         JButton registerUserButton = new JButton("Don't have an account? Create New Account");
-        styleOtherButton(registerUserButton);
+        OtherButton(registerUserButton);
         registerUserButton.addActionListener(e -> mainApp.showView(MainApplication.CREATE_USER_VIEW));
         formPanel.add(registerUserButton, gbc);
 
@@ -140,8 +142,10 @@ public class LoginPanel extends JPanel {
             if (username.isEmpty() || password.isEmpty()) {
                 errorLabel.setText("Please enter both username and password.");
             } else {
-                // For demo, accept if username == "user" and password == "pass"
-                if (username.equals("user") && password.equals("pass")) {
+                boolean loggedIn = UserService.login(username, password);
+                if (loggedIn) {
+                    User user = UserService.getUserByUsername(username);
+                    Session.setCurrentUser(user);
                     errorLabel.setText(" ");
                     mainApp.showView(MainApplication.HOME_VIEW);
                 } else {
@@ -152,6 +156,7 @@ public class LoginPanel extends JPanel {
 
         formPanel.add(loginButton, gbc);
 
+        // Centering wrapper
         JPanel wrapper = new JPanel(new GridBagLayout());
         wrapper.setBackground(SECONDARY_COLOR);
         wrapper.add(formPanel);
@@ -175,18 +180,20 @@ public class LoginPanel extends JPanel {
         button.setFocusPainted(false);
         button.setContentAreaFilled(false);
 
-        button.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseEntered(java.awt.event.MouseEvent evt) {
+        button.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
                 button.setForeground(PRIMARY_COLOR);
             }
 
-            public void mouseExited(java.awt.event.MouseEvent evt) {
+            @Override
+            public void mouseExited(MouseEvent e) {
                 button.setForeground(new Color(80, 80, 80));
             }
         });
     }
 
-    private void styleOtherButton(JButton button) {
+    private void OtherButton(JButton button) {
         button.setFont(BUTTON2_FONT);
         button.setForeground(PRIMARY_COLOR);
         button.setBackground(Color.WHITE);
@@ -194,12 +201,14 @@ public class LoginPanel extends JPanel {
         button.setFocusPainted(false);
         button.setContentAreaFilled(false);
 
-        button.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseEntered(java.awt.event.MouseEvent evt) {
+        button.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
                 button.setForeground(new Color(80, 80, 80));
             }
 
-            public void mouseExited(java.awt.event.MouseEvent evt) {
+            @Override
+            public void mouseExited(MouseEvent e) {
                 button.setForeground(PRIMARY_COLOR);
             }
         });
@@ -214,13 +223,15 @@ public class LoginPanel extends JPanel {
                 new EmptyBorder(12, 25, 12, 25)));
         button.setFocusPainted(false);
 
-        button.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseEntered(java.awt.event.MouseEvent evt) {
+        button.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
                 button.setBackground(new Color(255, 165, 0));
                 button.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
             }
 
-            public void mouseExited(java.awt.event.MouseEvent evt) {
+            @Override
+            public void mouseExited(MouseEvent e) {
                 button.setBackground(ACCENT_COLOR);
             }
         });
