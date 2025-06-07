@@ -189,7 +189,21 @@ public class ProductsPanel extends JPanel {
 
         card.add(Box.createRigidArea(new Dimension(0, 15)));
 
-        // Add to Cart Button
+        // Quantity Selector
+        JPanel quantityPanel = new JPanel();
+        quantityPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 0));
+        quantityPanel.setBackground(Color.WHITE);
+
+        JSpinner quantitySpinner = new JSpinner(new SpinnerNumberModel(1, 1, product.getStockQuantity(), 1));
+
+        JSpinner.DefaultEditor editor = (JSpinner.DefaultEditor) quantitySpinner.getEditor();
+        editor.getTextField().setColumns(3); // Now this will work
+
+        quantityPanel.add(quantitySpinner);
+        card.add(quantityPanel);
+
+        card.add(Box.createRigidArea(new Dimension(0, 10)));
+
         JButton addToCartButton = new JButton("Add to Cart");
         styleAccentButton(addToCartButton);
         addToCartButton.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -202,25 +216,10 @@ public class ProductsPanel extends JPanel {
                 return;
             }
 
-            // Show quantity selector dialog
-            SpinnerNumberModel model = new SpinnerNumberModel(1, 1, product.getStockQuantity(), 1);
-            JSpinner spinner = new JSpinner(model);
-            int option = JOptionPane.showOptionDialog(
-                    this,
-                    spinner,
-                    "Select Quantity",
-                    JOptionPane.OK_CANCEL_OPTION,
-                    JOptionPane.QUESTION_MESSAGE,
-                    null,
-                    null,
-                    null);
-
-            if (option == JOptionPane.OK_OPTION) {
-                int quantity = (int) spinner.getValue();
-                DatabaseHelper.addToCart(currentUserId, product.getId(), quantity);
-                JOptionPane.showMessageDialog(this,
-                        quantity + " " + product.getName() + "(s) added to cart!");
-            }
+            int quantity = (int) quantitySpinner.getValue();
+            DatabaseHelper.addToCart(currentUserId, product.getId(), quantity);
+            JOptionPane.showMessageDialog(this,
+                    quantity + " " + product.getName() + "(s) added to cart!");
         });
 
         card.add(addToCartButton);

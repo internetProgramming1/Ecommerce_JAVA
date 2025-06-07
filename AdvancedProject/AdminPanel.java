@@ -116,8 +116,8 @@ public class AdminPanel extends JPanel {
                 errorLabel.setText("Please enter both username and password.");
             } else {
                 errorLabel.setText(" ");
-                // Add login logic
-                mainApp.showView(MainApplication.HOME_VIEW);
+                passwordField.setText(" ");
+                mainApp.showView(MainApplication.ADMIN_DASHBOARD);
             }
         });
         formPanel.add(loginButton, gbc);

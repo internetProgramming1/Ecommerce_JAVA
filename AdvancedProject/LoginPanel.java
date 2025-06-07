@@ -141,7 +141,6 @@ public class LoginPanel extends JPanel {
                 errorLabel.setText(" ");
                 usernameField.setText(" ");
                 passwordField.setText(" ");
-                // Perform login logic
                 mainApp.showView(MainApplication.PRODUCTS_VIEW);
                 int userId = DatabaseHelper.authenticateUser(username, password);
 
