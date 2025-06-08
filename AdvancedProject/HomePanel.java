@@ -82,28 +82,26 @@ public class HomePanel extends JPanel {
         JButton productsButton = new JButton("Products");
         styleNavButton(productsButton);
         productsButton.addActionListener(e -> {
-            // You would create a ProductsPanel similar to HomePanel
-            // mainApp.showView(MainApplication.PRODUCTS_VIEW);
-            JOptionPane.showMessageDialog(this, "Products view would show here");
+            mainApp.showView(MainApplication.PRODUCTS_VIEW);
+            ;
         });
         navButtons.add(productsButton);
 
         // About button
-      JButton aboutButton = new JButton("About");
+        JButton aboutButton = new JButton("About");
         styleNavButton(aboutButton);
         aboutButton.addActionListener(e -> {
-            ainApp.showView(MainApplication.ABOUT_VIEW); 
-
+            mainApp.showView(MainApplication.ABOUT_VIEW);
+        });
         navButtons.add(aboutButton);
 
         // Contact button
-         JButton contactButton = new JButton("Contact");
+        JButton contactButton = new JButton("Contact");
         styleNavButton(contactButton);
         contactButton.addActionListener(e -> {
-        mainApp.showView(MainApplication.CONTACT_VIEW); 
+            mainApp.showView(MainApplication.CONTACT_VIEW);
         });
 
-        
         // User actions
         JButton loginButton = new JButton("Login");
         styleAccentButton(loginButton);
