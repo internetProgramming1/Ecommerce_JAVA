@@ -25,6 +25,7 @@ public class CartDisplayPanel extends JPanel {
     public CartDisplayPanel(MainApplication mainApp) {
         this.mainApp = mainApp;
         initializeUI();
+
     }
 
     private void initializeUI() {
@@ -34,7 +35,7 @@ public class CartDisplayPanel extends JPanel {
         // Navigation bar
         JPanel navBar = createNavBar();
         add(navBar, BorderLayout.NORTH);
-
+        System.out.println("WHAT WHAT WHAT");
         // Main content area
         JPanel contentPanel = new JPanel(new BorderLayout());
         contentPanel.setBorder(new EmptyBorder(20, 20, 20, 20));
@@ -190,7 +191,7 @@ public class CartDisplayPanel extends JPanel {
         controlPanel.add(removeButton);
 
         panel.add(controlPanel, BorderLayout.EAST);
-
+        System.out.println(UserSession.getInstance().isLoggedIn() ? "User is logged in" : "User is not logged in");
         return panel;
     }
 
@@ -223,6 +224,7 @@ public class CartDisplayPanel extends JPanel {
             JOptionPane.showMessageDialog(this,
                     "Please login to proceed to checkout",
                     "Authentication Required", JOptionPane.INFORMATION_MESSAGE);
+            System.out.println("User not logged in, redirecting to login view.");
             mainApp.showView(MainApplication.LOGIN_VIEW);
             return;
         }
@@ -258,6 +260,7 @@ public class CartDisplayPanel extends JPanel {
             if (success) {
                 JOptionPane.showMessageDialog(this, "Order placed successfully!");
                 UserSession.getInstance().getCart().clear();
+                System.out.println("Order placed successfully, clearing cart.");
                 mainApp.showView(MainApplication.HOME_VIEW);
             } else {
                 JOptionPane.showMessageDialog(this,
