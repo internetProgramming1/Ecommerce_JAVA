@@ -7,19 +7,26 @@ public class Product {
     private double price;
     private String imagePath;
     private int stockQuantity;
+    private String status; // e.g., "available", "out of stock"
 
-    public Product(int id, String name, String description, double price, String imagePath, int stockQuantity) {
+    public Product(int id, String name, String description, double price, String imagePath, int stockQuantity,
+            String status) {
         this.id = id;
         this.name = name;
         this.description = description;
         this.price = price;
         this.imagePath = imagePath;
         this.stockQuantity = stockQuantity;
+        this.status = status;
     }
 
     // Getters and setters
     public int getId() {
         return id;
+    }
+
+    public String getStatus() {
+        return status;
     }
 
     public String getName() {
@@ -40,6 +47,10 @@ public class Product {
 
     public int getStockQuantity() {
         return stockQuantity;
+    }
+
+    public void decreaseStock(int quantity) {
+        this.stockQuantity -= quantity;
     }
 
     public void setId(int id) {
@@ -64,6 +75,14 @@ public class Product {
 
     public void setStockQuantity(int stockQuantity) {
         this.stockQuantity = stockQuantity;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public void increaseStock(int quantity) {
+        this.stockQuantity += quantity;
     }
 
 }

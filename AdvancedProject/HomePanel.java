@@ -41,7 +41,7 @@ public class HomePanel extends JPanel {
         add(featuresPanel, BorderLayout.SOUTH);
     }
 
-    private JPanel createNavBar() {
+    public JPanel createNavBar() {
         JPanel navPanel = new JPanel(new BorderLayout());
         navPanel.setBackground(Color.WHITE);
         navPanel.setBorder(new CompoundBorder(
@@ -53,7 +53,7 @@ public class HomePanel extends JPanel {
         logoPanel.setBackground(Color.WHITE);
 
         try {
-            ImageIcon logoIcon = new ImageIcon(new URL("https://via.placeholder.com/40x40"));
+            ImageIcon logoIcon = new ImageIcon(new URL(""));
             JLabel logo = new JLabel(logoIcon);
             logoPanel.add(logo);
         } catch (Exception e) {
@@ -280,6 +280,9 @@ public class HomePanel extends JPanel {
         styleAccentButton(registerButton);
         registerButton.setAlignmentX(Component.CENTER_ALIGNMENT);
         registerButton.setMaximumSize(new Dimension(200, 45));
+        registerButton.addActionListener(e -> {
+            mainApp.showView(MainApplication.CREATE_USER_VIEW);
+        });
         ctaPanel.add(registerButton);
 
         featuresPanel.add(ctaPanel);

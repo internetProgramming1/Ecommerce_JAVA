@@ -160,22 +160,49 @@ public class CreateUserPanel extends JPanel {
         JButton registerButton = new JButton("Create Account");
         styleAccentButton(registerButton);
         registerButton.addActionListener(e -> {
+            UserDAO userDAO = new UserDAO();
+
+            String username = userField.getText();
             String fullName = fullNameField.getText();
             String email = emailField.getText();
             String phone = phoneField.getText();
             String password = new String(passwordField.getPassword());
             String confirmPassword = new String(confirmPasswordField.getPassword());
-
+            // Password length check (min 6 chars)
+            if (password.length() < 6) {
+                errorLabel.setText("Password must be at least 6 characters.");
+                return;
+            }
             if (fullName.isEmpty() || email.isEmpty() || phone.isEmpty() || password.isEmpty()
                     || confirmPassword.isEmpty()) {
                 errorLabel.setText("Please fill in all fields.");
             } else if (!password.equals(confirmPassword)) {
                 errorLabel.setText("Passwords do not match.");
+
+            } else if (userDAO.isUserExists(username, email)) {
+                errorLabel.setText("Username or Email already exists. Please choose another.");
+
             } else {
+                User newUser = new User();
+                newUser.setFullName(fullName);
+                newUser.setEmail(email);
+                newUser.setPhone(phone);
+                newUser.setUsername(username);
+                newUser.setPassword(UserDAO.hashPassword(password));
+
+                userDAO.saveUser(newUser);
+
                 errorLabel.setText(" ");
-                // TODO: Add database insertion logic here
+                fullNameField.setText(" ");
+                emailField.setText(" ");
+                phoneField.setText(" ");
+                userField.setText(" ");
+                passwordField.setText(" ");
+                confirmPasswordField.setText(" ");
+
                 JOptionPane.showMessageDialog(this, "User account created successfully!");
-                mainApp.showView(MainApplication.LOGIN_VIEW);
+                mainApp.showView(MainApplication.PRODUCTS_VIEW);
+
             }
         });
         formPanel.add(registerButton, gbc);
@@ -233,4 +260,5 @@ public class CreateUserPanel extends JPanel {
             }
         });
     }
+
 }

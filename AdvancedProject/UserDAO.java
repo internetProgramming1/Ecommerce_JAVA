@@ -4,10 +4,10 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.*;
 
-public class AdminDAO {
+public class UserDAO {
     private Connection connection;
 
-    public AdminDAO() {
+    public UserDAO() {
         try {
             Class.forName("com.mysql.cj.jdbc.Driver");
             connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/Advanced_Project", "root",
@@ -34,11 +34,12 @@ public class AdminDAO {
         }
     }
 
-    public boolean isAdminExists(String adminId) {
+    public boolean isUserExists(String username, String email) {
         try {
-            String query = "SELECT COUNT(*) FROM admins WHERE admin_id = ?";
+            String query = "SELECT COUNT(*) FROM users WHERE username = ? OR email = ?";
             PreparedStatement stmt = connection.prepareStatement(query);
-            stmt.setString(1, adminId);
+            stmt.setString(1, username);
+            stmt.setString(2, email);
             ResultSet rs = stmt.executeQuery();
 
             if (rs.next()) {
@@ -50,47 +51,47 @@ public class AdminDAO {
         return false;
     }
 
-    public void saveAdmin(Admin admin) {
+    public void saveUser(User user) {
         try {
-            String query = "INSERT INTO admins (admin_id, full_name, email, phone, password) VALUES (?, ?, ?, ?, ?)";
+            String query = "INSERT INTO users (fullname, email, phoneNumber, username, password_hash) VALUES (?, ?, ?, ?, ?)";
             PreparedStatement stmt = connection.prepareStatement(query);
-            stmt.setString(1, admin.getAdminId());
-            stmt.setString(2, admin.getFullName());
-            stmt.setString(3, admin.getEmail());
-            stmt.setString(4, admin.getPhone());
-            stmt.setString(5, admin.getPassword());
+            stmt.setString(1, user.getFullName());
+            stmt.setString(2, user.getEmail());
+            stmt.setString(3, user.getPhone());
+            stmt.setString(4, user.getUsername());
+            stmt.setString(5, user.getPassword());
             stmt.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
         }
     }
 
-    // ✅ Login with adminId and password
-    public Admin login(String adminId, String plainPassword) {
+    public User login(String username, String plainPassword) {
         try {
-            String query = "SELECT * FROM admins WHERE admin_id = ?";
+            String query = "SELECT * FROM users WHERE username = ?";
             PreparedStatement stmt = connection.prepareStatement(query);
-            stmt.setString(1, adminId);
+            stmt.setString(1, username);
             ResultSet rs = stmt.executeQuery();
 
             if (rs.next()) {
-                String storedHash = rs.getString("password");
-                String inputHash = AdminDAO.hashPassword(plainPassword);
+                String storedHashedPassword = rs.getString("password_hash");
 
-                if (storedHash.equals(inputHash)) {
-                    Admin admin = new Admin();
-                    admin.setAdminId(adminId);
-                    admin.setFullName(rs.getString("full_name"));
-                    admin.setEmail(rs.getString("email"));
-                    admin.setPhone(rs.getString("phone"));
-                    admin.setPassword(storedHash); // optional
+                // Hash input password and compare
+                String hashedInput = UserDAO.hashPassword(plainPassword);
+                if (storedHashedPassword.equals(hashedInput)) {
+                    User user = new User();
+                    user.setFullName(rs.getString("fullname"));
+                    user.setEmail(rs.getString("email"));
+                    user.setPhone(rs.getString("phoneNumber"));
+                    user.setUsername(rs.getString("username"));
+                    user.setPassword(storedHashedPassword); // optional
 
-                    return admin;
+                    return user;
                 }
             }
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        return null;
+        return null; // login failed
     }
 }

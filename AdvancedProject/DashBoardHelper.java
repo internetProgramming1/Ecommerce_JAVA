@@ -5,9 +5,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class DashBoardHelper {
-    private static final String DB_URL = "jdbc:mysql://localhost:3306/ecommerce_db";
-    private static final String USER = "admin";
-    private static final String PASS = "password";
+    private static final String DB_URL = "jdbc:mysql://localhost:3306/Advanced_Project";
+    private static final String USER = "root";
+    private static final String PASS = "pass1234";
 
     public int getCount(String query) {
         try (Connection conn = DriverManager.getConnection(DB_URL, USER, PASS);
@@ -42,14 +42,25 @@ public class DashBoardHelper {
 
     public List<String> getRecentActivities() {
         List<String> activities = new ArrayList<>();
-        String query = "SELECT activity_text, timestamp FROM activities ORDER BY timestamp DESC LIMIT 5";
+        String query = "SELECT CONCAT('User ', username, ' registered') AS activity_text, created_at AS timestamp FROM users "
+                +
+                "UNION ALL " +
+                "SELECT CONCAT('products \"', name, '\" added') AS activity_text, created_at AS timestamp FROM product "
+                +
+                "UNION ALL " +
+                "SELECT CONCAT('Order #', order_id, ' placed by ', customer_name) AS activity_text, created_at AS timestamp FROM `order` "
+                +
+                "ORDER BY timestamp DESC " +
+                "LIMIT 5";
 
         try (Connection conn = DriverManager.getConnection(DB_URL, USER, PASS);
                 Statement stmt = conn.createStatement();
                 ResultSet rs = stmt.executeQuery(query)) {
+
             while (rs.next()) {
                 activities.add(rs.getString("activity_text") + " - " + rs.getTimestamp("timestamp"));
             }
+
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -58,7 +69,7 @@ public class DashBoardHelper {
 
     public List<Product> getProducts() {
         List<Product> products = new ArrayList<>();
-        String query = "SELECT id, name, category, price, stock FROM products";
+        String query = "SELECT id, name, description, price, image_path,stock_quantity,status FROM products";
 
         try (Connection conn = DriverManager.getConnection(DB_URL, USER, PASS);
                 Statement stmt = conn.createStatement();
@@ -69,8 +80,9 @@ public class DashBoardHelper {
                         rs.getString("name"),
                         rs.getString("description"),
                         rs.getDouble("price"),
-                        rs.getString("imagePath"),
-                        rs.getInt("stock_quantity")));
+                        rs.getString("image_path"),
+                        rs.getInt("stock_quantity"),
+                        rs.getString("status")));
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -78,28 +90,29 @@ public class DashBoardHelper {
         return products;
     }
 
-    // public List<User> getUsers() {
-    // List<User> users = new ArrayList<>();
-    // String query = "SELECT id, username, email, role, join_date, is_active FROM
-    // users";
+    public List<User> getUsers() {
+        List<User> users = new ArrayList<>();
+        String query = "SELECT id, username, email,phoneNumber FROM users";
 
-    // try (Connection conn = DriverManager.getConnection(DB_URL, USER, PASS);
-    // Statement stmt = conn.createStatement();
-    // ResultSet rs = stmt.executeQuery(query)) {
-    // while (rs.next()) {
-    // users.add(new User(
-    // rs.getInt("id"),
-    // rs.getString("username"),
-    // rs.getString("email"),
-    // rs.getString("role"),
-    // rs.getDate("join_date"),
-    // rs.getBoolean("is_active")));
-    // }
-    // } catch (SQLException e) {
-    // e.printStackTrace();
-    // }
-    // return users;
-    // }
+        try (Connection conn = DriverManager.getConnection(DB_URL, USER, PASS);
+                Statement stmt = conn.createStatement();
+                ResultSet rs = stmt.executeQuery(query)) {
+
+            while (rs.next()) {
+                User user = new User();
+                user.setId(rs.getInt("id"));
+                user.setUsername(rs.getString("username"));
+                user.setEmail(rs.getString("email"));
+                user.setPhone(rs.getString("phoneNumber"));
+                users.add(user);
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return users;
+    }
 
     public List<Order> getOrders() {
         List<Order> orders = new ArrayList<>();
@@ -124,16 +137,19 @@ public class DashBoardHelper {
     }
 
     public boolean addProduct(Product product) {
-        String sql = "INSERT INTO products (name, description, price, stock, category) VALUES (?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO products (name, description, price, status, image_path, stock_quantity) VALUES (?, ?, ?, ?, ?, ?)";
 
         try (Connection conn = DriverManager.getConnection(DB_URL, USER, PASS);
                 PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-
+            if (product.getStockQuantity() > 0) {
+                stmt.setString(4, "In Stock");
+            }
             stmt.setString(1, product.getName());
             stmt.setString(2, product.getDescription());
             stmt.setDouble(3, product.getPrice());
-            stmt.setInt(4, product.getStockQuantity());
-            // stmt.setString(5, product.getCategory());
+
+            stmt.setString(5, product.getImagePath());
+            stmt.setInt(6, product.getStockQuantity());
 
             int affectedRows = stmt.executeUpdate();
 
@@ -156,7 +172,7 @@ public class DashBoardHelper {
 
     public Product getProductById(int id) {
         String sql = "SELECT * FROM products WHERE id = ?";
-        Product product = null;
+        Product product = new Product(0, "", "", 0.0, "", 0, "");
 
         try (Connection conn = DriverManager.getConnection(DB_URL, USER, PASS);
                 PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -182,7 +198,7 @@ public class DashBoardHelper {
     }
 
     public boolean updateProduct(Product product) {
-        String sql = "UPDATE products SET name = ?, description = ?, price = ?, stock = ?, category = ? WHERE id = ?";
+        String sql = "UPDATE products SET name = ?, description = ?, price = ?, stock_quantity = ?, status = ?, image_path = ? WHERE id = ?";
 
         try (Connection conn = DriverManager.getConnection(DB_URL, USER, PASS);
                 PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -191,8 +207,9 @@ public class DashBoardHelper {
             stmt.setString(2, product.getDescription());
             stmt.setDouble(3, product.getPrice());
             stmt.setInt(4, product.getStockQuantity());
-            stmt.setString(5, product.getImagePath());
-            stmt.setInt(6, product.getId());
+            stmt.setString(5, product.getStatus());
+            stmt.setString(6, product.getImagePath());
+            stmt.setInt(7, product.getId());
 
             int affectedRows = stmt.executeUpdate();
             return affectedRows > 0;

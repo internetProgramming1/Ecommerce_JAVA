@@ -1,20 +1,18 @@
 package Ecommerce_JAVA.AdvancedProject;
 
-public class User {
+public class Admin {
+    private String adminId;
     private String fullName;
     private String email;
     private String phone;
-    private String username;
     private String password;
-    private int id;
 
-    // Getters and Setters
-    public int getId() {
-        return id;
+    public String getAdminId() {
+        return adminId;
     }
 
-    public void setId(int id) {
-        this.id = id;
+    public void setAdminId(String adminId) {
+        this.adminId = adminId;
     }
 
     public String getFullName() {
@@ -39,14 +37,6 @@ public class User {
 
     public void setPhone(String phone) {
         this.phone = phone;
-    }
-
-    public String getUsername() {
-        return username;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
     }
 
     public String getPassword() {

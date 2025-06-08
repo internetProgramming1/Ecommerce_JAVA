@@ -85,6 +85,17 @@ public class CreateAdminPanel extends JPanel {
         JTextField fullNameField = new JTextField(20);
         styleTextField(fullNameField);
         formPanel.add(fullNameField, gbc);
+        // Email
+        gbc.gridy++;
+        gbc.gridx = 0;
+        JLabel emailLabel = new JLabel("Email:");
+        emailLabel.setFont(BUTTON_FONT);
+        formPanel.add(emailLabel, gbc);
+
+        gbc.gridx++;
+        JTextField emailField = new JTextField(20);
+        styleTextField(emailField);
+        formPanel.add(emailField, gbc);
 
         // Phone number
         gbc.gridy++;
@@ -152,6 +163,7 @@ public class CreateAdminPanel extends JPanel {
         registerButton.addActionListener(e -> {
             String adminId = adminIdField.getText().trim();
             String fullName = fullNameField.getText().trim();
+            String email = emailField.getText().trim();
             String phone = phoneField.getText().trim();
             String password = new String(passwordField.getPassword());
             String confirmPassword = new String(confirmPasswordField.getPassword());
@@ -160,24 +172,6 @@ public class CreateAdminPanel extends JPanel {
             if (adminId.isEmpty() || fullName.isEmpty() || phone.isEmpty() || password.isEmpty()
                     || confirmPassword.isEmpty()) {
                 errorLabel.setText("Please fill in all fields.");
-                return;
-            }
-
-            // Validate email format
-            if (!adminId.matches("^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$")) {
-                errorLabel.setText("Invalid email format.");
-                return;
-            }
-
-            // Validate full name: letters, spaces only, min 2 chars
-            if (!fullName.matches("^[a-zA-Z\\s]{2,}$")) {
-                errorLabel.setText("Full name must contain only letters and spaces.");
-                return;
-            }
-
-            // Validate phone number: digits only, length between 7 and 15
-            if (!phone.matches("\\d{7,15}")) {
-                errorLabel.setText("Phone number must be 7 to 15 digits.");
                 return;
             }
 
@@ -193,12 +187,30 @@ public class CreateAdminPanel extends JPanel {
                 return;
             }
 
-            // If all validations pass, try to register admin
-            boolean registered = AdminDAO.registerAdmin(fullName, adminId, password);
-            if (registered) {
+            AdminDAO adminDAO = new AdminDAO();
+            Admin admin = new Admin();
+
+            if (!adminDAO.isAdminExists(admin.getAdminId())) {
+
+                admin.setFullName(fullName);
+                admin.setEmail(email);
+                admin.setPhone(phone);
+                admin.setAdminId(adminId);
+                admin.setPassword(AdminDAO.hashPassword(password));
+
+                adminDAO.saveAdmin(admin);
+
                 errorLabel.setText(" ");
-                JOptionPane.showMessageDialog(this, "Admin registration successful!");
-                mainApp.showView(MainApplication.ADMIN_VIEW);
+                fullNameField.setText(" ");
+                emailField.setText(" ");
+                phoneField.setText(" ");
+                adminIdField.setText(" ");
+                passwordField.setText(" ");
+                confirmPasswordField.setText(" ");
+
+                JOptionPane.showMessageDialog(this, "Admin account created successfully!");
+                mainApp.showView(MainApplication.LOGIN_VIEW);
+
             } else {
                 errorLabel.setText("Registration failed. Email might already be in use.");
             }

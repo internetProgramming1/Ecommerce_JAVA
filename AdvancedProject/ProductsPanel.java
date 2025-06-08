@@ -16,11 +16,10 @@ public class ProductsPanel extends JPanel {
 
     private MainApplication mainApp;
     private List<Product> products;
-    private int currentUserId; // Track logged-in user
+    private JButton cartButton; // Make cartButton an instance variable so we can update it
 
-    public ProductsPanel(MainApplication mainApp, int userId) {
+    public ProductsPanel(MainApplication mainApp) {
         this.mainApp = mainApp;
-        this.currentUserId = userId;
         initializeUI();
     }
 
@@ -40,7 +39,7 @@ public class ProductsPanel extends JPanel {
         add(new JScrollPane(productsPanel), BorderLayout.CENTER);
     }
 
-    private JPanel createNavBar() {
+    public JPanel createNavBar() {
         JPanel navPanel = new JPanel(new BorderLayout());
         navPanel.setBackground(Color.WHITE);
         navPanel.setBorder(new CompoundBorder(
@@ -69,7 +68,7 @@ public class ProductsPanel extends JPanel {
         JPanel navButtons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 15, 0));
         navButtons.setBackground(Color.WHITE);
 
-        // Home button - stays on current view but could refresh
+        // Home button
         JButton homeButton = new JButton("Home");
         styleNavButton(homeButton);
         homeButton.addActionListener(e -> {
@@ -77,13 +76,10 @@ public class ProductsPanel extends JPanel {
         });
         navButtons.add(homeButton);
 
-        // Products button - would show products view
         JButton productsButton = new JButton("Products");
         styleNavButton(productsButton);
         productsButton.addActionListener(e -> {
-            // You would create a ProductsPanel similar to HomePanel
-            // mainApp.showView(MainApplication.PRODUCTS_VIEW);
-            JOptionPane.showMessageDialog(this, "Products view would show here");
+            mainApp.showView(MainApplication.PRODUCTS_VIEW);
         });
         navButtons.add(productsButton);
 
@@ -92,7 +88,6 @@ public class ProductsPanel extends JPanel {
         styleNavButton(aboutButton);
         aboutButton.addActionListener(e -> {
             // mainApp.showView(MainApplication.ABOUT_VIEW);
-            JOptionPane.showMessageDialog(this, "About information would show here");
         });
         navButtons.add(aboutButton);
 
@@ -101,19 +96,67 @@ public class ProductsPanel extends JPanel {
         styleNavButton(contactButton);
         contactButton.addActionListener(e -> {
             // mainApp.showView(MainApplication.CONTACT_VIEW);
-            JOptionPane.showMessageDialog(this, "Contact form would show here");
         });
         navButtons.add(contactButton);
+
+        // Cart button with item count
+        cartButton = new JButton();
+        updateCartButtonCount(); // Initialize the cart button with current count
+        styleCartButton(cartButton);
+        cartButton.addActionListener(e -> {
+            if (UserSession.getInstance().isLoggedIn()) {
+                mainApp.showView(MainApplication.CART_VIEW);
+            } else {
+                JOptionPane.showMessageDialog(this, "Please login to view your cart");
+                mainApp.showView(MainApplication.LOGIN_VIEW);
+            }
+        });
+        navButtons.add(cartButton);
 
         // User actions
         JButton logoutButton = new JButton("Logout");
         styleAccentButton(logoutButton);
-        logoutButton.addActionListener(e -> mainApp.userLoggedOut());
+        logoutButton.addActionListener(e -> {
+            UserSession.getInstance().logout();
+            JOptionPane.showMessageDialog(this, "Logged out successfully.");
+            mainApp.showView(MainApplication.HOME_VIEW);
+        });
         navButtons.add(logoutButton);
 
         navPanel.add(navButtons, BorderLayout.EAST);
 
         return navPanel;
+    }
+
+    private void updateCartButtonCount() {
+        int itemCount = 0;
+        if (UserSession.getInstance().isLoggedIn()) {
+            itemCount = UserSession.getInstance().getCart().getTotalItems();
+        }
+        cartButton.setText(String.format("Cart (%d)", itemCount));
+    }
+
+    private void styleCartButton(JButton button) {
+        button.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        button.setForeground(PRIMARY_COLOR);
+        button.setBackground(Color.WHITE);
+        button.setBorder(new CompoundBorder(
+                new LineBorder(PRIMARY_COLOR, 1),
+                new EmptyBorder(5, 15, 5, 15)));
+        button.setFocusPainted(false);
+
+        button.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                button.setBackground(new Color(230, 245, 255));
+                button.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                button.setBackground(Color.WHITE);
+            }
+        });
     }
 
     private JPanel createProductsPanel() {
@@ -197,7 +240,7 @@ public class ProductsPanel extends JPanel {
         JSpinner quantitySpinner = new JSpinner(new SpinnerNumberModel(1, 1, product.getStockQuantity(), 1));
 
         JSpinner.DefaultEditor editor = (JSpinner.DefaultEditor) quantitySpinner.getEditor();
-        editor.getTextField().setColumns(3); // Now this will work
+        editor.getTextField().setColumns(3);
 
         quantityPanel.add(quantitySpinner);
         card.add(quantityPanel);
@@ -210,16 +253,18 @@ public class ProductsPanel extends JPanel {
         addToCartButton.setEnabled(product.getStockQuantity() > 0);
 
         addToCartButton.addActionListener(e -> {
-            // if (currentUserId == -1) {
-            // JOptionPane.showMessageDialog(this, "Please login to add items to cart");
-            // mainApp.showView(MainApplication.LOGIN_VIEW);
-            // return;
-            // }
+            if (!UserSession.getInstance().isLoggedIn()) {
+                JOptionPane.showMessageDialog(this, "Please login to add items to cart");
+                mainApp.showView(MainApplication.LOGIN_VIEW);
+                return;
+            } else {
+                System.out.println("User logged in ");
+            }
 
             int quantity = (int) quantitySpinner.getValue();
-            DatabaseHelper.addToCart(currentUserId, product.getId(), quantity);
-            JOptionPane.showMessageDialog(this,
-                    quantity + " " + product.getName() + "(s) added to cart!");
+            UserSession.getInstance().getCart().addToCart(product, quantity);
+            JOptionPane.showMessageDialog(card, quantity + " " + product.getName() + "(s) added to cart.");
+            updateCartButtonCount(); // Update the cart count after adding items
         });
 
         card.add(addToCartButton);
@@ -269,5 +314,4 @@ public class ProductsPanel extends JPanel {
             }
         });
     }
-
 }

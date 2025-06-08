@@ -110,22 +110,20 @@ public class AdminPanel extends JPanel {
         JButton loginButton = new JButton("Login As Admin");
         styleAccentButton(loginButton);
         loginButton.addActionListener(e -> {
-            String username = adminIdField.getText().trim();
+            String adminId = adminIdField.getText().trim();
             String password = new String(passwordField.getPassword()).trim();
-
-            if (username.isEmpty() || password.isEmpty()) {
+            AdminDAO adminDAO = new AdminDAO();
+            Admin admin = adminDAO.login(adminId, password);
+            if (adminId.isEmpty() || password.isEmpty()) {
                 errorLabel.setText("Please enter both username and password.");
-                return;
+
+            } else if (admin != null) {
+                JOptionPane.showMessageDialog(this, "Welcome Admin " + admin.getFullName() + "!");
+                mainApp.showView(MainApplication.ADMIN_DASHBOARD_VIEW);
+            } else {
+                errorLabel.setText("Invalid Admin ID or password!");
             }
 
-            boolean isValid = AdminDAO.loginAdmin(username, password);
-            if (isValid) {
-                errorLabel.setText(" ");
-                passwordField.setText("");
-                mainApp.showView(MainApplication.ADMIN_DASHBOARD);
-            } else {
-                errorLabel.setText("Invalid username or password.");
-            }
         });
 
         formPanel.add(loginButton, gbc);
@@ -134,7 +132,7 @@ public class AdminPanel extends JPanel {
         gbc.gridy++;
         JButton registerUserButton = new JButton("Create New Admin Account");
         OtherButton(registerUserButton);
-        registerUserButton.addActionListener(e -> mainApp.showView(MainApplication.CREATE_USER_VIEW));
+        registerUserButton.addActionListener(e -> mainApp.showView(MainApplication.CREATE_ADMIN_VIEW));
         formPanel.add(registerUserButton, gbc);
 
         // Centering wrapper

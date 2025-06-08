@@ -136,17 +136,21 @@ public class LoginPanel extends JPanel {
         loginButton.addActionListener(e -> {
             String username = usernameField.getText();
             String password = new String(passwordField.getPassword());
-
+            UserDAO userDAO = new UserDAO();
+            User loggedInUser = userDAO.login(username, password);
             if (username.isEmpty() || password.isEmpty()) {
                 errorLabel.setText("Please enter both username and password.");
+            } else if (loggedInUser != null) {
+                UserSession.getInstance().login(username); // Set session
+                errorLabel.setText(" ");
+                usernameField.setText(" ");
+                passwordField.setText(" ");
+
+                JOptionPane.showMessageDialog(this,
+                        "Login successful. Welcome Back " + loggedInUser.getFullName() + "!");
+                mainApp.showView(MainApplication.PRODUCTS_VIEW);
             } else {
-                // For demo, accept if username == "user" and password == "pass"
-                if (username.equals("user") && password.equals("pass")) {
-                    errorLabel.setText(" ");
-                    mainApp.showView(MainApplication.HOME_VIEW);
-                } else {
-                    errorLabel.setText("Invalid username or password.");
-                }
+                errorLabel.setText("Invalid username or password!");
             }
         });
 

@@ -5,6 +5,7 @@ import javax.swing.border.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.*;
+import java.io.File;
 import java.sql.*;
 import java.util.Date;
 import javax.swing.table.TableCellRenderer;
@@ -86,9 +87,9 @@ public class AdminDashboard extends JPanel {
         summaryPanel.setBackground(SECONDARY_COLOR);
 
         int totalProducts = dbHelper.getCount("SELECT COUNT(*) FROM products");
-        int lowStockItems = dbHelper.getCount("SELECT COUNT(*) FROM products WHERE stock < 10");
+        int lowStockItems = dbHelper.getCount("SELECT COUNT(*) FROM products WHERE stock_quantity < 10");
         int activeUsers = dbHelper
-                .getCount("SELECT COUNT(*) FROM users WHERE last_login >= DATE_SUB(NOW(), INTERVAL 30 DAY)");
+                .getCount("SELECT COUNT(*) FROM users WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)");
         int pendingOrders = dbHelper.getCount("SELECT COUNT(*) FROM orders WHERE status = 'pending'");
 
         summaryPanel.add(createSummaryCard("Total Products", String.format("%,d", totalProducts), PRIMARY_COLOR));
@@ -129,18 +130,18 @@ public class AdminDashboard extends JPanel {
         activityTitle.setBorder(new EmptyBorder(0, 0, 10, 0));
         activityPanel.add(activityTitle, BorderLayout.NORTH);
 
-        // List<String> activities = dbHelper.getRecentActivities();
-        // JList<String> activityList = new JList<>(activities.toArray(new String[0]));
-        // activityList.setBackground(Color.WHITE);
-        // activityList.setFont(SUBTITLE_FONT);
-        // activityList.setSelectionModel(new DefaultListSelectionModel() {
-        // @Override
-        // public void setSelectionInterval(int index0, int index1) {
-        // super.setSelectionInterval(-1, -1);
-        // }
-        // });
+        List<String> activities = dbHelper.getRecentActivities();
+        JList<String> activityList = new JList<>(activities.toArray(new String[0]));
+        activityList.setBackground(Color.WHITE);
+        activityList.setFont(SUBTITLE_FONT);
+        activityList.setSelectionModel(new DefaultListSelectionModel() {
+            @Override
+            public void setSelectionInterval(int index0, int index1) {
+                super.setSelectionInterval(-1, -1);
+            }
+        });
 
-        // activityPanel.add(new JScrollPane(activityList), BorderLayout.CENTER);
+        activityPanel.add(new JScrollPane(activityList), BorderLayout.CENTER);
 
         contentPanel.add(salesPanel);
         contentPanel.add(activityPanel);
@@ -189,7 +190,7 @@ public class AdminDashboard extends JPanel {
 
         productsPanel.add(toolBar, BorderLayout.NORTH);
 
-        String[] columns = { "ID", "Name", "Category", "Price", "Stock", "Status" };
+        String[] columns = { "ID", "Name", "Description", "Price", "Stock", "Status" };
         DefaultTableModel model = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -222,23 +223,6 @@ public class AdminDashboard extends JPanel {
         scrollPane.setBorder(BorderFactory.createEmptyBorder());
         productsPanel.add(scrollPane, BorderLayout.CENTER);
 
-        JPanel searchPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        searchPanel.setBackground(SECONDARY_COLOR);
-        searchPanel.setBorder(new EmptyBorder(10, 0, 0, 0));
-
-        JTextField searchField = new JTextField(25);
-        searchField.setFont(SUBTITLE_FONT);
-
-        JButton searchButton = new JButton("Search");
-        styleAccentButton(searchButton);
-        searchButton.addActionListener(e -> searchProducts(searchField.getText()));
-
-        searchPanel.add(new JLabel("Search:"));
-        searchPanel.add(searchField);
-        searchPanel.add(searchButton);
-
-        productsPanel.add(searchPanel, BorderLayout.SOUTH);
-
         return productsPanel;
     }
 
@@ -252,7 +236,7 @@ public class AdminDashboard extends JPanel {
         titleLabel.setBorder(new EmptyBorder(0, 0, 15, 0));
         usersPanel.add(titleLabel, BorderLayout.NORTH);
 
-        String[] columns = { "ID", "Username", "Email", "Role", "Joined", "Status" };
+        String[] columns = { "ID", "Username", "Email", "Phone No" };
         DefaultTableModel model = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -266,17 +250,15 @@ public class AdminDashboard extends JPanel {
         userTable.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 14));
         userTable.setRowHeight(30);
 
-        // List<User> users = dbHelper.getUsers();
-        // for (User user : users) {
-        // model.addRow(new Object[] {
-        // user.getId(),
-        // user.getUsername(),
-        // user.getEmail(),
-        // user.getRole(),
-        // user.getJoinDate(),
-        // user.isActive() ? "Active" : "Inactive"
-        // });
-        // }
+        List<User> users = dbHelper.getUsers();
+        for (User user : users) {
+            model.addRow(new Object[] {
+                    user.getId(),
+                    user.getUsername(),
+                    user.getEmail(),
+                    user.getPhone()
+            });
+        }
 
         JScrollPane scrollPane = new JScrollPane(userTable);
         scrollPane.setBorder(BorderFactory.createEmptyBorder());
@@ -426,6 +408,7 @@ public class AdminDashboard extends JPanel {
         }
     }
 
+    //
     static class ButtonEditor extends DefaultCellEditor {
         private JButton button;
         private String label;
@@ -458,38 +441,56 @@ public class AdminDashboard extends JPanel {
     }
 
     private void showAddProductDialog() {
-        // Create the dialog
         JDialog dialog = new JDialog(mainApp, "Add New Product", true);
         dialog.setLayout(new BorderLayout());
-        dialog.setSize(500, 400);
+        dialog.setSize(550, 480);
         dialog.setLocationRelativeTo(mainApp);
 
-        // Form panel
         JPanel formPanel = new JPanel(new GridLayout(6, 2, 10, 10));
         formPanel.setBorder(new EmptyBorder(20, 20, 20, 20));
 
-        // Form fields
         JTextField nameField = new JTextField();
         JTextField priceField = new JTextField();
         JTextField stockField = new JTextField();
-        JComboBox<String> categoryCombo = new JComboBox<>(
-                new String[] { "Electronics", "Clothing", "Home", "Books", "Other" });
         JTextArea descriptionArea = new JTextArea(3, 20);
         JScrollPane descriptionScroll = new JScrollPane(descriptionArea);
 
-        // Add components to form
+        JLabel imageLabel = new JLabel("No Image Selected");
+        JButton chooseImageButton = new JButton("Choose Image");
+
+        final String[] imagePath = { null }; // For selected image path
+
+        chooseImageButton.addActionListener(e -> {
+            JFileChooser fileChooser = new JFileChooser();
+            fileChooser.setDialogTitle("Select Product Image");
+            fileChooser.setAcceptAllFileFilterUsed(false);
+            fileChooser.addChoosableFileFilter(new javax.swing.filechooser.FileNameExtensionFilter(
+                    "Image Files", "jpg", "jpeg", "png", "gif"));
+
+            int result = fileChooser.showOpenDialog(dialog);
+            if (result == JFileChooser.APPROVE_OPTION) {
+                File selectedFile = fileChooser.getSelectedFile();
+                imagePath[0] = selectedFile.getAbsolutePath();
+                imageLabel.setText(selectedFile.getName());
+            }
+        });
+
+        // Add fields to form
         formPanel.add(new JLabel("Product Name:"));
         formPanel.add(nameField);
         formPanel.add(new JLabel("Price:"));
         formPanel.add(priceField);
         formPanel.add(new JLabel("Stock Quantity:"));
         formPanel.add(stockField);
-        formPanel.add(new JLabel("Category:"));
-        formPanel.add(categoryCombo);
         formPanel.add(new JLabel("Description:"));
         formPanel.add(descriptionScroll);
+        formPanel.add(new JLabel("Image:"));
 
-        // Button panel
+        JPanel imageChooserPanel = new JPanel(new BorderLayout());
+        imageChooserPanel.add(imageLabel, BorderLayout.CENTER);
+        imageChooserPanel.add(chooseImageButton, BorderLayout.EAST);
+        formPanel.add(imageChooserPanel);
+
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         JButton cancelButton = new JButton("Cancel");
         JButton saveButton = new JButton("Save Product");
@@ -497,49 +498,44 @@ public class AdminDashboard extends JPanel {
         styleNavButton(cancelButton);
 
         cancelButton.addActionListener(e -> dialog.dispose());
+
         saveButton.addActionListener(e -> {
             try {
-                // Validate inputs
                 String name = nameField.getText().trim();
-                if (name.isEmpty()) {
-                    throw new IllegalArgumentException("Product name cannot be empty");
-                }
-
-                double price = Double.parseDouble(priceField.getText());
-                if (price <= 0) {
-                    throw new IllegalArgumentException("Price must be positive");
-                }
-
-                int stock = Integer.parseInt(stockField.getText());
-                if (stock < 0) {
-                    throw new IllegalArgumentException("Stock cannot be negative");
-                }
-
-                String category = (String) categoryCombo.getSelectedItem();
+                double price = Double.parseDouble(priceField.getText().trim());
+                int stock = Integer.parseInt(stockField.getText().trim());
                 String description = descriptionArea.getText().trim();
 
-                // Create product object
-                Product product = new Product();
+                if (name.isEmpty())
+                    throw new IllegalArgumentException("Product name cannot be empty");
+                if (price <= 0)
+                    throw new IllegalArgumentException("Price must be positive");
+                if (stock < 0)
+                    throw new IllegalArgumentException("Stock cannot be negative");
+
+                // Automatically determine status
+                String status = (stock > 0) ? "Available" : "Out of Stock";
+
+                Product product = new Product(0, "", "", 0.0, "", 0, "");
                 product.setName(name);
                 product.setPrice(price);
                 product.setStockQuantity(stock);
-                // product.setCategory(category);
+                product.setStatus(status);
                 product.setDescription(description);
+                product.setImagePath(imagePath[0]); // nullable
 
-                // Save to database
                 if (dbHelper.addProduct(product)) {
                     JOptionPane.showMessageDialog(dialog, "Product added successfully!");
-                    loadProductData(); // Refresh the product table
+                    loadProductData(); // Refresh table
                     dialog.dispose();
                 } else {
                     JOptionPane.showMessageDialog(dialog, "Failed to add product", "Error", JOptionPane.ERROR_MESSAGE);
                 }
             } catch (NumberFormatException ex) {
-                JOptionPane.showMessageDialog(dialog, "Please enter valid numbers for price and stock",
-                        "Input Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(dialog, "Please enter valid numbers for price and stock", "Input Error",
+                        JOptionPane.ERROR_MESSAGE);
             } catch (IllegalArgumentException ex) {
-                JOptionPane.showMessageDialog(dialog, ex.getMessage(),
-                        "Input Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(dialog, ex.getMessage(), "Input Error", JOptionPane.ERROR_MESSAGE);
             }
         });
 
@@ -570,13 +566,12 @@ public class AdminDashboard extends JPanel {
             return;
         }
 
-        // Create the edit dialog (similar to add dialog but with existing values)
         JDialog dialog = new JDialog(mainApp, "Edit Product", true);
         dialog.setLayout(new BorderLayout());
-        dialog.setSize(500, 400);
+        dialog.setSize(500, 450);
         dialog.setLocationRelativeTo(mainApp);
 
-        JPanel formPanel = new JPanel(new GridLayout(6, 2, 10, 10));
+        JPanel formPanel = new JPanel(new GridLayout(7, 2, 10, 10));
         formPanel.setBorder(new EmptyBorder(20, 20, 20, 20));
 
         JTextField nameField = new JTextField(product.getName());
@@ -584,9 +579,23 @@ public class AdminDashboard extends JPanel {
         JTextField stockField = new JTextField(String.valueOf(product.getStockQuantity()));
         JComboBox<String> categoryCombo = new JComboBox<>(
                 new String[] { "Electronics", "Clothing", "Home", "Books", "Other" });
-        categoryCombo.setSelectedItem(product.getStockQuantity());
         JTextArea descriptionArea = new JTextArea(product.getDescription(), 3, 20);
         JScrollPane descriptionScroll = new JScrollPane(descriptionArea);
+
+        // File chooser for optional image update
+        JLabel imageLabel = new JLabel(product.getImagePath() != null ? product.getImagePath() : "No image selected");
+        JButton imageButton = new JButton("Choose Image");
+        final String[] selectedImagePath = { product.getImagePath() }; // initialize with existing
+
+        imageButton.addActionListener(e -> {
+            JFileChooser fileChooser = new JFileChooser();
+            int option = fileChooser.showOpenDialog(dialog);
+            if (option == JFileChooser.APPROVE_OPTION) {
+                File selectedFile = fileChooser.getSelectedFile();
+                selectedImagePath[0] = selectedFile.getAbsolutePath();
+                imageLabel.setText(selectedFile.getName());
+            }
+        });
 
         formPanel.add(new JLabel("Product Name:"));
         formPanel.add(nameField);
@@ -598,6 +607,8 @@ public class AdminDashboard extends JPanel {
         formPanel.add(categoryCombo);
         formPanel.add(new JLabel("Description:"));
         formPanel.add(descriptionScroll);
+        formPanel.add(imageButton);
+        formPanel.add(imageLabel);
 
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         JButton cancelButton = new JButton("Cancel");
@@ -608,33 +619,41 @@ public class AdminDashboard extends JPanel {
         cancelButton.addActionListener(e -> dialog.dispose());
         saveButton.addActionListener(e -> {
             try {
-                // Validate inputs (same as add product)
                 String name = nameField.getText().trim();
-                if (name.isEmpty()) {
+                if (name.isEmpty())
                     throw new IllegalArgumentException("Product name cannot be empty");
-                }
 
                 double price = Double.parseDouble(priceField.getText());
+                if (price <= 0)
+                    throw new IllegalArgumentException("Price must be positive");
+
                 int stock = Integer.parseInt(stockField.getText());
+                if (stock < 0)
+                    throw new IllegalArgumentException("Stock cannot be negative");
+
                 String category = (String) categoryCombo.getSelectedItem();
                 String description = descriptionArea.getText().trim();
+
+                // Auto-calculate status
+                String status = (stock > 0) ? "In Stock" : "Out of Stock";
 
                 // Update product object
                 product.setName(name);
                 product.setPrice(price);
                 product.setStockQuantity(stock);
+                product.setStatus(status);
                 product.setDescription(description);
-                // product.imagePath();
+                product.setImagePath(selectedImagePath[0]);
 
-                // Save to database
                 if (dbHelper.updateProduct(product)) {
                     JOptionPane.showMessageDialog(dialog, "Product updated successfully!");
-                    loadProductData(); // Refresh the product table
+                    loadProductData(); // Refresh table
                     dialog.dispose();
                 } else {
-                    JOptionPane.showMessageDialog(dialog, "Failed to update product",
-                            "Error", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(dialog, "Failed to update product", "Error",
+                            JOptionPane.ERROR_MESSAGE);
                 }
+
             } catch (NumberFormatException ex) {
                 JOptionPane.showMessageDialog(dialog, "Please enter valid numbers for price and stock",
                         "Input Error", JOptionPane.ERROR_MESSAGE);
@@ -656,23 +675,28 @@ public class AdminDashboard extends JPanel {
         JTable productTable = getProductTable();
         int selectedRow = productTable.getSelectedRow();
 
+        // Check if a row is selected
         if (selectedRow == -1) {
             JOptionPane.showMessageDialog(this, "Please select a product to delete",
                     "No Selection", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
+        // Retrieve product ID and name from the table
         int productId = (int) productTable.getValueAt(selectedRow, 0);
         String productName = (String) productTable.getValueAt(selectedRow, 1);
 
+        // Confirm deletion with the user
         int confirm = JOptionPane.showConfirmDialog(this,
-                "Are you sure you want to delete '" + productName + "'?",
+                "Are you sure you want to delete \"" + productName + "\"?",
                 "Confirm Deletion", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
 
+        // If user confirms
         if (confirm == JOptionPane.YES_OPTION) {
-            if (dbHelper.deleteProduct(productId)) {
+            boolean success = dbHelper.deleteProduct(productId);
+            if (success) {
                 JOptionPane.showMessageDialog(this, "Product deleted successfully");
-                loadProductData(); // Refresh the product table
+                loadProductData(); // Refresh table after deletion
             } else {
                 JOptionPane.showMessageDialog(this, "Failed to delete product",
                         "Error", JOptionPane.ERROR_MESSAGE);
@@ -717,39 +741,4 @@ public class AdminDashboard extends JPanel {
         return null;
     }
 
-    // private void searchProducts(String query) {
-    // if (query == null || query.trim().isEmpty()) {
-    // loadProductData(); // Show all products if search is empty
-    // return;
-    // }
-
-    // try {
-    // DefaultTableModel model = (DefaultTableModel) getProductTable().getModel();
-    // model.setRowCount(0); // Clear existing data
-
-    // List<Product> products = dbHelper.searchProducts(query);
-    // if (products.isEmpty()) {
-    // JOptionPane.showMessageDialog(this, "No products found matching: " + query,
-    // "No Results", JOptionPane.INFORMATION_MESSAGE);
-    // }
-
-    // for (Product product : products) {
-    // String status = product.getStockQuantity() == 0 ? "Out of Stock"
-    // : (product.getStockQuantity() < 10 ? "Low Stock" : "In Stock");
-    // model.addRow(new Object[] {
-    // product.getId(),
-    // product.getName(),
-    // product.getDescription(),
-    // product.getPrice(),
-    // product.getStockQuantity(),
-    // status
-    // });
-    // }
-    // } catch (Exception e) {
-    // JOptionPane.showMessageDialog(this,
-    // "Error searching products: " + e.getMessage(),
-    // "Database Error",
-    // JOptionPane.ERROR_MESSAGE);
-    // }
-    // }
 }

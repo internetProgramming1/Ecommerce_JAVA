@@ -1,13 +1,55 @@
 package Ecommerce_JAVA.AdvancedProject;
 
 import java.sql.*;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.ArrayList;
 
 public class DatabaseHelper {
     private static final String DB_URL = "jdbc:mysql://localhost:3306/Advanced_Project";
     private static final String DB_USER = "root";
     private static final String DB_PASSWORD = "pass1234";
+
+    public static boolean saveOrder(String username, List<Cart.CartItem> items, double total, String deliveryAddress) {
+        String insertOrderSQL = "INSERT INTO orders (username, total, delivery_address, product_id, product_name, quantity, price) "
+                +
+                "VALUES (?, ?, ?, ?, ?, ?, ?)";
+        String updateStockSQL = "UPDATE products SET stock_quantity = stock_quantity - ? WHERE id = ?";
+
+        try (Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
+                PreparedStatement orderStmt = conn.prepareStatement(insertOrderSQL);
+                PreparedStatement updateStockStmt = conn.prepareStatement(updateStockSQL)) {
+
+            conn.setAutoCommit(false); // Begin transaction
+
+            // Insert each item as a separate order record
+            for (Cart.CartItem item : items) {
+                orderStmt.setString(1, username);
+                orderStmt.setDouble(2, total);
+                orderStmt.setString(3, deliveryAddress);
+                orderStmt.setInt(4, item.getProduct().getId());
+                orderStmt.setString(5, item.getProduct().getName());
+                orderStmt.setInt(6, item.getQuantity());
+                orderStmt.setDouble(7, item.getProduct().getPrice());
+                orderStmt.addBatch();
+
+                // Update product stock
+                updateStockStmt.setInt(1, item.getQuantity());
+                updateStockStmt.setInt(2, item.getProduct().getId());
+                updateStockStmt.addBatch();
+            }
+
+            // Execute all batch operations
+            orderStmt.executeBatch();
+            updateStockStmt.executeBatch();
+            conn.commit(); // Success
+
+            return true;
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
 
     public static List<Product> getAllProducts() {
         List<Product> products = new ArrayList<>();
@@ -23,7 +65,8 @@ public class DatabaseHelper {
                         rs.getString("description"),
                         rs.getDouble("price"),
                         rs.getString("image_path"),
-                        rs.getInt("stock_quantity"));
+                        rs.getInt("stock_quantity"),
+                        rs.getString("status"));
                 products.add(product);
             }
         } catch (SQLException e) {
@@ -32,245 +75,4 @@ public class DatabaseHelper {
         return products;
     }
 
-    public static void addToCart(int userId, int productId, int quantity) {
-        if (userId <= 0) {
-            throw new IllegalArgumentException("Invalid user ID");
-        }
-        if (productId <= 0) {
-            throw new IllegalArgumentException("Invalid product ID");
-        }
-        if (quantity <= 0) {
-            throw new IllegalArgumentException("Quantity must be positive");
-        }
-
-        // Check if product exists and has sufficient stock
-        if (!isProductAvailable(productId, quantity)) {
-            throw new IllegalStateException("Product not available in requested quantity");
-        }
-
-        String sql;
-        // Check if product already exists in cart
-        if (isProductInCart(userId, productId)) {
-            sql = "UPDATE cart SET quantity = quantity + ? WHERE user_id = ? AND product_id = ?";
-        } else {
-            sql = "INSERT INTO cart (user_id, product_id, quantity) VALUES (?, ?, ?)";
-        }
-
-        try (Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
-                PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            if (isProductInCart(userId, productId)) {
-                pstmt.setInt(1, quantity);
-                pstmt.setInt(2, userId);
-                pstmt.setInt(3, productId);
-            } else {
-                pstmt.setInt(1, userId);
-                pstmt.setInt(2, productId);
-                pstmt.setInt(3, quantity);
-            }
-
-            int affectedRows = pstmt.executeUpdate();
-            if (affectedRows == 0) {
-                throw new SQLException("Adding to cart failed, no rows affected.");
-            }
-
-            // Update product stock
-            updateProductStock(productId, -quantity);
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-            throw new RuntimeException("Failed to add product to cart", e);
-        }
-    }
-
-    private static boolean isProductAvailable(int productId, int requestedQuantity) {
-        String sql = "SELECT stock_quantity FROM products WHERE id = ?";
-
-        try (Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
-                PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            pstmt.setInt(1, productId);
-            try (ResultSet rs = pstmt.executeQuery()) {
-                if (rs.next()) {
-                    int availableQuantity = rs.getInt("stock_quantity");
-                    return availableQuantity >= requestedQuantity;
-                }
-                return false;
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
-        }
-    }
-
-    private static boolean isProductInCart(int userId, int productId) {
-        String sql = "SELECT 1 FROM cart WHERE user_id = ? AND product_id = ? LIMIT 1";
-
-        try (Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
-                PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            pstmt.setInt(1, userId);
-            pstmt.setInt(2, productId);
-            try (ResultSet rs = pstmt.executeQuery()) {
-                return rs.next();
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
-        }
-    }
-
-    private static void updateProductStock(int productId, int quantityChange) {
-        String sql = "UPDATE products SET stock_quantity = stock_quantity + ? WHERE id = ?";
-
-        try (Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
-                PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            pstmt.setInt(1, quantityChange);
-            pstmt.setInt(2, productId);
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
-            throw new RuntimeException("Failed to update product stock", e);
-        }
-    }
-
-    // Additional useful cart methods
-    public static List<CartItem> getCartItems(int userId) {
-        List<CartItem> items = new ArrayList<>();
-        String sql = "SELECT c.id, p.id as product_id, p.name, p.price, c.quantity, p.image_path " +
-                "FROM cart c JOIN products p ON c.product_id = p.id " +
-                "WHERE c.user_id = ?";
-
-        try (Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
-                PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            pstmt.setInt(1, userId);
-            try (ResultSet rs = pstmt.executeQuery()) {
-                while (rs.next()) {
-                    CartItem item = new CartItem(
-                            rs.getInt("id"),
-                            rs.getInt("product_id"),
-                            rs.getString("name"),
-                            rs.getDouble("price"),
-                            rs.getInt("quantity"),
-                            rs.getString("image_path"));
-                    items.add(item);
-                }
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return items;
-    }
-
-    public static void removeFromCart(int cartItemId) {
-        // First get the quantity and product ID to restore stock
-        String selectSql = "SELECT product_id, quantity FROM cart WHERE id = ?";
-        String deleteSql = "DELETE FROM cart WHERE id = ?";
-
-        try (Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
-                PreparedStatement selectStmt = conn.prepareStatement(selectSql);
-                PreparedStatement deleteStmt = conn.prepareStatement(deleteSql)) {
-
-            // Get the item details first
-            selectStmt.setInt(1, cartItemId);
-            try (ResultSet rs = selectStmt.executeQuery()) {
-                if (rs.next()) {
-                    int productId = rs.getInt("product_id");
-                    int quantity = rs.getInt("quantity");
-
-                    // Delete the item
-                    deleteStmt.setInt(1, cartItemId);
-                    deleteStmt.executeUpdate();
-
-                    // Restore stock
-                    updateProductStock(productId, quantity);
-                }
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-            throw new RuntimeException("Failed to remove item from cart", e);
-        }
-    }
-
-    public static void updateCartItemQuantity(int cartItemId, int newQuantity) {
-        if (newQuantity <= 0) {
-            removeFromCart(cartItemId);
-            return;
-        }
-
-        // First get the current quantity and product ID
-        String selectSql = "SELECT product_id, quantity FROM cart WHERE id = ?";
-        String updateSql = "UPDATE cart SET quantity = ? WHERE id = ?";
-
-        try (Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
-                PreparedStatement selectStmt = conn.prepareStatement(selectSql);
-                PreparedStatement updateStmt = conn.prepareStatement(updateSql)) {
-
-            // Get current item details
-            selectStmt.setInt(1, cartItemId);
-            try (ResultSet rs = selectStmt.executeQuery()) {
-                if (rs.next()) {
-                    int productId = rs.getInt("product_id");
-                    int currentQuantity = rs.getInt("quantity");
-                    int quantityDifference = newQuantity - currentQuantity;
-
-                    // Check if product has enough stock
-                    if (quantityDifference > 0 && !isProductAvailable(productId, quantityDifference)) {
-                        throw new IllegalStateException("Not enough stock available");
-                    }
-
-                    // Update quantity
-                    updateStmt.setInt(1, newQuantity);
-                    updateStmt.setInt(2, cartItemId);
-                    updateStmt.executeUpdate();
-
-                    // Update product stock
-                    updateProductStock(productId, -quantityDifference);
-                }
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-            throw new RuntimeException("Failed to update cart item quantity", e);
-        }
-    }
-
-    public static double getCartTotal(int userId) {
-        String sql = "SELECT SUM(p.price * c.quantity) as total " +
-                "FROM cart c JOIN products p ON c.product_id = p.id " +
-                "WHERE c.user_id = ?";
-
-        try (Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
-                PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            pstmt.setInt(1, userId);
-            try (ResultSet rs = pstmt.executeQuery()) {
-                if (rs.next()) {
-                    return rs.getDouble("total");
-                }
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return 0.0;
-    }
-
-    public static int authenticateUser(String username, String password) {
-        String sql = "SELECT id FROM users WHERE username = ? AND password = ?";
-        // try (Connection conn = getConnection();
-        // PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-        // pstmt.setString(1, username);
-        // // pstmt.setString(2, hashPassword(password)); // Always hash passwords!
-
-        // ResultSet rs = pstmt.executeQuery();
-        // if (rs.next()) {
-        // return rs.getInt("id"); // Return user ID
-        // }
-        // } catch (SQLException e) {
-        // e.printStackTrace();
-        // }
-        return -1; // Invalid credentials
-    }
 }
