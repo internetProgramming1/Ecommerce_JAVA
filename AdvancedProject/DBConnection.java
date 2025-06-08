@@ -9,7 +9,13 @@ public class DBConnection {
     private static final String USER = "root"; // replace with your DB username
     private static final String PASSWORD = ""; // replace with your DB password
 
-    public static Connection getConnection() throws SQLException {
-        return DriverManager.getConnection(URL, USER, PASSWORD);
+    public static Connection getConnection() {
+        try {
+            return DriverManager.getConnection(URL, USER, PASSWORD);
+        } catch (SQLException e) {
+            System.err.println("DB Connection failed: " + e.getMessage());
+            return null;
+        }
     }
+
 }

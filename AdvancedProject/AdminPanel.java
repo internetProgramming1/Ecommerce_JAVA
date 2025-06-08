@@ -110,16 +110,24 @@ public class AdminPanel extends JPanel {
         JButton loginButton = new JButton("Login As Admin");
         styleAccentButton(loginButton);
         loginButton.addActionListener(e -> {
-            String username = adminIdField.getText();
-            String password = new String(passwordField.getPassword());
+            String username = adminIdField.getText().trim();
+            String password = new String(passwordField.getPassword()).trim();
+
             if (username.isEmpty() || password.isEmpty()) {
                 errorLabel.setText("Please enter both username and password.");
-            } else {
+                return;
+            }
+
+            boolean isValid = AdminDAO.loginAdmin(username, password);
+            if (isValid) {
                 errorLabel.setText(" ");
-                passwordField.setText(" ");
+                passwordField.setText("");
                 mainApp.showView(MainApplication.ADMIN_DASHBOARD);
+            } else {
+                errorLabel.setText("Invalid username or password.");
             }
         });
+
         formPanel.add(loginButton, gbc);
 
         // Create New Admin link

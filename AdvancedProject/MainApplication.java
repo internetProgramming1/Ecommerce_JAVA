@@ -11,6 +11,7 @@ public class MainApplication extends JFrame {
 
     private CardLayout layout;
     private JPanel cards;
+    public static final String ADMIN_DASHBOARD = "AdminDashboard";
 
     public MainApplication() {
         setTitle("E-commerce App");

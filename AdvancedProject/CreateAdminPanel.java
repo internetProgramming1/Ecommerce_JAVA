@@ -156,18 +156,54 @@ public class CreateAdminPanel extends JPanel {
             String password = new String(passwordField.getPassword());
             String confirmPassword = new String(confirmPasswordField.getPassword());
 
+            // Check empty fields
             if (adminId.isEmpty() || fullName.isEmpty() || phone.isEmpty() || password.isEmpty()
                     || confirmPassword.isEmpty()) {
                 errorLabel.setText("Please fill in all fields.");
-            } else if (!password.equals(confirmPassword)) {
+                return;
+            }
+
+            // Validate email format
+            if (!adminId.matches("^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$")) {
+                errorLabel.setText("Invalid email format.");
+                return;
+            }
+
+            // Validate full name: letters, spaces only, min 2 chars
+            if (!fullName.matches("^[a-zA-Z\\s]{2,}$")) {
+                errorLabel.setText("Full name must contain only letters and spaces.");
+                return;
+            }
+
+            // Validate phone number: digits only, length between 7 and 15
+            if (!phone.matches("\\d{7,15}")) {
+                errorLabel.setText("Phone number must be 7 to 15 digits.");
+                return;
+            }
+
+            // Password length check (min 6 chars)
+            if (password.length() < 6) {
+                errorLabel.setText("Password must be at least 6 characters.");
+                return;
+            }
+
+            // Passwords match
+            if (!password.equals(confirmPassword)) {
                 errorLabel.setText("Passwords do not match!");
-            } else {
+                return;
+            }
+
+            // If all validations pass, try to register admin
+            boolean registered = AdminDAO.registerAdmin(fullName, adminId, password);
+            if (registered) {
                 errorLabel.setText(" ");
-                // Example: Register admin here, save to DB, etc.
                 JOptionPane.showMessageDialog(this, "Admin registration successful!");
                 mainApp.showView(MainApplication.ADMIN_VIEW);
+            } else {
+                errorLabel.setText("Registration failed. Email might already be in use.");
             }
         });
+
         formPanel.add(registerButton, gbc);
 
         // Centering wrapper
