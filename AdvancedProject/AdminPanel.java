@@ -120,6 +120,8 @@ public class AdminPanel extends JPanel {
             } else if (admin != null) {
                 JOptionPane.showMessageDialog(this, "Welcome Admin " + admin.getFullName() + "!");
                 mainApp.showView(MainApplication.ADMIN_DASHBOARD_VIEW);
+                adminIdField.setText("");
+                passwordField.setText("");
             } else {
                 errorLabel.setText("Invalid Admin ID or password!");
             }

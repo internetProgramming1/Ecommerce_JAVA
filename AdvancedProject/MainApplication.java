@@ -49,6 +49,7 @@ public class MainApplication extends JFrame {
         cardPanel.add(new AdminDashboard(this), ADMIN_DASHBOARD_VIEW);
         cardPanel.add(new AboutPanel(this), ABOUT_VIEW);
         cardPanel.add(new ContactPanel(this), CONTACT_VIEW);
+
         setContentPane(cardPanel);
         setupFrame();
     }

@@ -116,34 +116,26 @@ public class CartDisplayPanel extends JPanel {
     }
 
     private void refreshCartItems() {
-        // cartItemsPanel.removeAll();
+        cartItemsPanel.removeAll();
 
-        // if (!UserSession.getInstance().isLoggedIn()) {
-        // cartItemsPanel.add(new JLabel("Please login to view your cart",
-        // JLabel.CENTER));
-        // totalLabel.setText("Total: $0.00");
-        // revalidateAndRepaint();
-        // return;
-        // }
-
-        List<CartItem> cartItems = UserSession.getInstance().getCart().getItems();
-
-        if (cartItems.isEmpty()) {
-            cartItemsPanel.add(new JLabel("Your cart is empty", JLabel.CENTER));
+        if (!UserSession.getInstance().isLoggedIn()) {
+            cartItemsPanel.add(new JLabel("Please login to view your cart", JLabel.CENTER));
             totalLabel.setText("Total: $0.00");
             revalidateAndRepaint();
             return;
         }
 
-        double total = 0;
-
-        for (CartItem item : cartItems) {
-            cartItemsPanel.add(createCartItemPanel(item));
-            cartItemsPanel.add(Box.createRigidArea(new Dimension(0, 10)));
-            total += item.getProduct().getPrice() * item.getQuantity();
+        List<CartItem> items = UserSession.getInstance().getCart().getItems();
+        if (items.isEmpty()) {
+            cartItemsPanel.add(new JLabel("Your cart is empty", JLabel.CENTER));
+        } else {
+            double total = 0;
+            for (CartItem item : items) {
+                cartItemsPanel.add(createCartItemPanel(item));
+                total += item.getProduct().getPrice() * item.getQuantity();
+            }
+            totalLabel.setText("Total: " + currencyFormat.format(total));
         }
-
-        totalLabel.setText("Total: " + currencyFormat.format(total));
         revalidateAndRepaint();
     }
 

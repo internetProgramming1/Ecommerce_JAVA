@@ -87,7 +87,7 @@ public class ProductsPanel extends JPanel {
         JButton aboutButton = new JButton("About");
         styleNavButton(aboutButton);
         aboutButton.addActionListener(e -> {
-            // mainApp.showView(MainApplication.ABOUT_VIEW);
+            mainApp.showView(MainApplication.ABOUT_VIEW);
         });
         navButtons.add(aboutButton);
 
@@ -95,7 +95,7 @@ public class ProductsPanel extends JPanel {
         JButton contactButton = new JButton("Contact");
         styleNavButton(contactButton);
         contactButton.addActionListener(e -> {
-            // mainApp.showView(MainApplication.CONTACT_VIEW);
+            mainApp.showView(MainApplication.CONTACT_VIEW);
         });
         navButtons.add(contactButton);
 
@@ -106,6 +106,7 @@ public class ProductsPanel extends JPanel {
         cartButton.addActionListener(e -> {
             if (UserSession.getInstance().isLoggedIn()) {
                 mainApp.showView(MainApplication.CART_VIEW);
+                System.out.println("the user logged in...");
             } else {
                 JOptionPane.showMessageDialog(this, "Please login to view your cart");
                 mainApp.showView(MainApplication.LOGIN_VIEW);

@@ -45,10 +45,10 @@ public class DashBoardHelper {
         String query = "SELECT CONCAT('User ', username, ' registered') AS activity_text, created_at AS timestamp FROM users "
                 +
                 "UNION ALL " +
-                "SELECT CONCAT('products \"', name, '\" added') AS activity_text, created_at AS timestamp FROM product "
+                "SELECT CONCAT('product \"', name, '\" added') AS activity_text, created_at AS timestamp FROM products "
                 +
                 "UNION ALL " +
-                "SELECT CONCAT('Order #', order_id, ' placed by ', customer_name) AS activity_text, created_at AS timestamp FROM `order` "
+                "SELECT CONCAT('Order #', id, ' placed by ', username) AS activity_text, order_date AS timestamp FROM `orders` "
                 +
                 "ORDER BY timestamp DESC " +
                 "LIMIT 5";
@@ -114,21 +114,28 @@ public class DashBoardHelper {
         return users;
     }
 
-    public List<Order> getOrders() {
-        List<Order> orders = new ArrayList<>();
-        String query = "SELECT o.id, u.username as customer, o.order_date, o.total_amount as amount, o.status " +
-                "FROM orders o JOIN users u ON o.user_id = u.id ORDER BY o.order_date DESC";
+    public List<Order1> getOrders() {
+        List<Order1> orders = new ArrayList<>();
+        String query = "SELECT id, username, order_date, product_name, quantity, total,price, status,delivery_address FROM orders";
 
         try (Connection conn = DriverManager.getConnection(DB_URL, USER, PASS);
                 Statement stmt = conn.createStatement();
                 ResultSet rs = stmt.executeQuery(query)) {
+
             while (rs.next()) {
-                orders.add(new Order(
-                        rs.getInt("id"),
-                        rs.getString("customer"),
-                        rs.getDate("order_date"),
-                        rs.getDouble("amount"),
-                        rs.getString("status")));
+
+                Order1 order = new Order1();
+                order.setId(rs.getInt("id"));
+                order.setUsername(rs.getString("username"));
+                order.setOrderDate(rs.getTimestamp("order_date"));
+                order.setProductName(rs.getString("product_name"));
+                order.setQuantity(rs.getInt("quantity"));
+                order.setTotal(rs.getDouble("total"));
+                order.setPrice(rs.getDouble("price"));
+                order.setStatus(rs.getString("status"));
+                order.setDeliveryAddress(rs.getString("delivery_address"));
+
+                orders.add(order);
             }
         } catch (SQLException e) {
             e.printStackTrace();
