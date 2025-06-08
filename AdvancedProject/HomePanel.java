@@ -89,23 +89,21 @@ public class HomePanel extends JPanel {
         navButtons.add(productsButton);
 
         // About button
-        JButton aboutButton = new JButton("About");
+      JButton aboutButton = new JButton("About");
         styleNavButton(aboutButton);
         aboutButton.addActionListener(e -> {
-            // mainApp.showView(MainApplication.ABOUT_VIEW);
-            JOptionPane.showMessageDialog(this, "About information would show here");
-        });
+            ainApp.showView(MainApplication.ABOUT_VIEW); 
+
         navButtons.add(aboutButton);
 
         // Contact button
-        JButton contactButton = new JButton("Contact");
+         JButton contactButton = new JButton("Contact");
         styleNavButton(contactButton);
         contactButton.addActionListener(e -> {
-            // mainApp.showView(MainApplication.CONTACT_VIEW);
-            JOptionPane.showMessageDialog(this, "Contact form would show here");
+        mainApp.showView(MainApplication.CONTACT_VIEW); 
         });
-        navButtons.add(contactButton);
 
+        
         // User actions
         JButton loginButton = new JButton("Login");
         styleAccentButton(loginButton);

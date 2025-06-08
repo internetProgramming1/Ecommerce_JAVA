@@ -8,6 +8,8 @@ public class MainApplication extends JFrame {
     public static final String LOGIN_VIEW = "LOGIN";
     public static final String CREATE_USER_VIEW = "CREATE_USER";
     public static final String ADMIN_VIEW = "ADMIN";
+    public static final String CONTACT_VIEW = "CONTACT";
+    public static final String ABOUT_VIEW = "ABOUT";
 
     private CardLayout layout;
     private JPanel cards;
@@ -23,7 +25,8 @@ public class MainApplication extends JFrame {
         cards.add(new HomePanel(this), HOME_VIEW);
         cards.add(new LoginPanel(this), LOGIN_VIEW);
         cards.add(new CreateUserPanel(this), CREATE_USER_VIEW);
-        // cards.add(new AdminLoginPanel(this), ADMIN_VIEW); // implement later
+        cards.add(new ContactPanel(this), CONTACT_VIEW);
+        cards.add(new AboutPanel(this), ABOUT_VIEW);
 
         add(cards);
         layout.show(cards, LOGIN_VIEW);
